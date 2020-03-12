@@ -6,14 +6,14 @@ function start_stream() {
    curl -X POST "http://localhost:1337/betStream?duration=${duration}&betSchema=${type}&betsPerSecond=${bps}"
 }
 
-function orwell_stream() {
+function stream_orwell() {
    start_stream orwell $@
 }
 
-function openbet_stream() {
+function stream_openbet() {
    start_stream openbetEventsRaw $@
 }
 
-function amelco_stream() {
+function stream_amelco() {
    start_stream amelcoEvents $@
 }
