@@ -1,75 +1,119 @@
-function gen_kafka_certs { (
-    set -e
-    if [ -z $1 ]; then
-	    echo "Usage $0 <cn> <namespace> <cluster> <squad> <keystore_filename> <keystore_password> <cert_prefix_in_keystore>"
-        echo "CN has to be passed"
-        echo "Go to https://stash.skybet.net/projects/PS/repos/kafka-pki-tooling/browse/README.md for parameters"
-	    return 1
+#!/bin/bash
+
+source ${GRM_SCRIPTS:?}/kafka/environment.sh
+
+function kafka_cert_keystore_path() {
+    local usage="appname environment"
+    local app=${1:?$usage}
+    local env=${2:?$usage}
+    echo "$(keystore_directory)/${app}-${env}-keystore.jks"
+}
+
+function kafka_cert_archive_keystore() {
+    local usage="appname environment"
+    local app=${1:?$usage}
+    local env=${2:?$usage}
+    local keystore="$(kafka_cert_keystore_path $app $env)"
+
+    if [ -f "$keystore" ]; then
+        echo "Archiving previous keystore"
+        mv -v $keystore ${keystore}.prev
     fi
+}
+       
+function kafka_cert_vault_path() {
+    local usage="app_name environment"
+    local app=${1:?$usage}
+    local environment=${2:?$usage}
+    echo "secret/trading/gbm/${environment}/${app}/kafka"
+}
 
-    CN="$1"
-    NAMESPACE="$2"
-    ENV="${2:-test}"
-    CLUSTER="${3:-trading}"
-    SQUAD="${4-gstp-risk-management}"
-    KEYSTORE_FILE="${5:-keystore.jks}"
-    KEYSTORE_PASSWORD="${6:-`pwgen 16 1`}"
-    CERT_PREFIX="${7:-trading}"
 
-    case "$NAMESPACE" in
+function kafka_cert_publish_secret() {
+    local usage="app_name environment keystore_password"
+    local app=${1:?$usage}
+    local environment=${2:?$usage}
+    local keystore_password=${3:?$usage}
+
+    local path=$(kafka_cert_vault_path $app $environment)
+    local keystore=$(kafka_cert_keystore_path $app $environment)
+    local encoded_keystore=$(base64 $keystore)
+
+    echo "Writing secret to vault at path $path"
+    pscli vault write $path keystore_password=$keystore_password keystore=$encoded_keystore
+}
+
+function kafka_cert_cluster() {
+    echo "${KAFKA_CERT_CLUSTER:-trading}"
+}
+
+function kafka_cert_squad() {
+    echo "${KAFKA_CERT_SQUAD:-gstp-risk-management}"
+}
+
+function kafka_cert_broker_env() {
+    local env=${1:?No env supplied}
+    
+    case "$env" in
         "live" | "nps")
-            ENV=prod
+            local broker_env="prod"
             ;;
         *)
-            ENV=test
+            local broker_env="test"
             ;;
     esac
+    echo $broker_env
+}
 
-    SECRET_PATH="secret/trading/gbm/${NAMESPACE}/$1/kafka"
-    KEYSTORE_DESTINATION="$(pwd)/$(basename $KEYSTORE_FILE)"
+# Following plat-services guide https://tools.skybet.net/confluence/display/PSK/Requesting+a+certificate+-+the+automated+method
+function kafka_cert_create_keystore() {
+    local usage="Usage: create_cert app_name environment keystore_password"
+    local app=${1:?$usage}
+    local environment=${2:?$usage}
+    local keystore_password=${3:?$usage}
 
-    if [ -f "$KEYSTORE_DESTINATION" ]; then
-        echo "Archiving previous keystore"
-        mv -v $KEYSTORE_DESTINATION ${KEYSTORE_DESTINATION}.prev
-    fi
+    local cluster=$(kafka_cert_cluster)
+    local cluster_env=$(kafka_cert_broker_env $environment)
+    local squad=$(kafka_cert_squad)
+    local vault_path="ps-pki/kafka/${cluster}/${cluster_env}/issue/${squad}"
+    local keystore_name=$(basename $(kafka_cert_keystore_path $app $environment)) 
 
-    WORK_DIR=$(mktemp -d)
-    if [ -f "$KEYSTORE_FILE" ]; then
-        echo "Keystore exists appending cert to it"
-        cp $KEYSTORE_FILE $WORK_DIR
-    else
-        echo "Keystore does not exist, creating new one"
-    fi
-    cd $WORK_DIR
+    local tmp_dir=$(keystore_directory)/tmp
+    local cert=$tmp_dir/output.json
+    mkdir $tmp_dir &> /dev/null
 
-    echo "Working directory: $WORK_DIR"
-    echo "CERT COMMON NAME (CN): $CN"
-    echo "Environment: $ENV"
-    echo "Keystore filename: $KEYSTORE_FILE"
-    echo "Keystore password: $KEYSTORE_PASSWORD"
+    pscli vault -- write -format=json "$vault_path" common_name="$app" ttl=131490h > $cert
+
+    jq -r '.data .ca_chain[0]' $cert > $tmp_dir/ca-chain0.crt
+    jq -r '.data .ca_chain[1]' $cert > $tmp_dir/ca-chain1.crt
+    jq -r '.data .certificate' $cert > $tmp_dir/certificate.crt
+    jq -r '.data .private_key' $cert > $tmp_dir/private.key
     
-    echo "Generating cert for cluster $CLUSTER, squad $SQUAD, env $ENV"
-    pscli vault -- write -format=json ps-pki/kafka/$CLUSTER/$ENV/issue/$SQUAD common_name="$CN" ttl=131490h > output.json
+    openssl pkcs12 -export -in $tmp_dir/certificate.crt -inkey $tmp_dir/private.key -name "$(kafka_cert_cluster)-client" -out $tmp_dir/bundle.p12 -password "pass:${keystore_password}"
 
-    echo "Generating cert files"
-    jq -r '.data .ca_chain[0]' output.json > ca-chain0.crt
-    jq -r '.data .ca_chain[1]' output.json > ca-chain1.crt
-    jq -r '.data .certificate' output.json > certificate.crt
-    jq -r '.data .private_key' output.json > private.key
-    
-    openssl pkcs12 -export -in certificate.crt -inkey private.key -name "$CERT_PREFIX-client" -out bundle.p12 -password "pass:$KEYSTORE_PASSWORD"
+    docker run -v $(keystore_directory):/root -w /root -it openjdk:11 keytool -importkeystore -deststorepass "$keystore_password" -destkeystore "$keystore_name" -srckeystore tmp/bundle.p12 -srcstoretype PKCS12 -srcstorepass "$keystore_password"
+    docker run -v $(keystore_directory):/root -w /root -it openjdk:11 keytool -import -alias "$(kafka_cert_cluster)-kafka_ca_1" -file tmp/ca-chain1.crt -keystore "$keystore_name" -storepass "$keystore_password" -noprompt
+    docker run -v $(keystore_directory):/root -w /root -it openjdk:11 keytool -import -alias "$(kafka_cert_cluster)-kafka_ca_2" -file tmp/ca-chain0.crt -keystore "$keystore_name" -storepass "$keystore_password" -noprompt
 
-    docker run -v $(pwd):/root -w /root -it openjdk:11 keytool -importkeystore -deststorepass "$KEYSTORE_PASSWORD" -destkeystore "$(basename $KEYSTORE_FILE)" -srckeystore bundle.p12 -srcstoretype PKCS12 -srcstorepass "$KEYSTORE_PASSWORD"
-    docker run -v $(pwd):/root -w /root -it openjdk:11 keytool -import -alias "$CERT_PREFIX-kafka_ca_1" -file ca-chain1.crt -keystore "$(basename $KEYSTORE_FILE)" -storepass "$KEYSTORE_PASSWORD" -noprompt
-    docker run -v $(pwd):/root -w /root -it openjdk:11 keytool -import -alias "$CERT_PREFIX-kafka_ca_2" -file ca-chain0.crt -keystore "$(basename $KEYSTORE_FILE)" -storepass "$KEYSTORE_PASSWORD" -noprompt
+   rm -r $tmp_dir
+}
 
-    echo "Moving keystore to current directory from tmp"
-    cp "$WORK_DIR/$(basename $KEYSTORE_FILE)" $KEYSTORE_DESTINATION
-    echo "Cleaning up"
-    rm bundle.p12 output.json ca-chain0.crt ca-chain1.crt certificate.crt private.key
-    echo "Done creating keystore file"
+function kafka_cert_create_password() {
+    if ! [ -x "$(command -v pwgen)" ]; then
+        echo 'pwgen missing - try "brew install pwgen"'
+        exit 1
+    fi
+    pwgen 16 1
+}
 
-    echo "Writing secret to vault at path $SECRET_PATH"
-    pscli vault write $SECRET_PATH keystore_password=$KEYSTORE_PASSWORD keystore=$(base64 $KEYSTORE_DESTINATION)
-    echo "Done writing to vault"
-) }
+function kafka_cert_generate() {
+    local usage="app environment"
+    local app=${1:?$usage}
+    local environment=${2:?$usage}
+    local password=$(kafka_cert_create_password)
+
+    kafka_cert_archive_keystore $app $environment
+    kafka_cert_create_keystore $app $environment $password
+    kafka_cert_publish_secret $app $environment $password
+}
+

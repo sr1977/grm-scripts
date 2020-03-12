@@ -11,7 +11,7 @@ if [[ -L $0 ]]; then
             $function $@
         )
     else
-        echo No environment file in \'$path\' >&2
+        echo No environment file in \'$dir\' >&2
         exit 3
     fi
 else
@@ -22,7 +22,7 @@ else
                 $@
             )
         else
-            echo No environment file in \'$path\' >&2
+            echo No environment file in \'$dir\' >&2
             exit 3
         fi
     else
