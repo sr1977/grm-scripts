@@ -1,5 +1,9 @@
 source ${GRM_SCRIPTS:?}/kafka/environment.sh
 
+function kafka_streams_home_directory() {
+    echo ${GRM_SCRIPTS}/kafka/streams
+}
+
 function kafka_streams_reset_query_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
@@ -29,7 +33,7 @@ function kafka_streams_rocksdb_scan() {
     fi
 
     echo "Using rocksdb at $db_dir"
-    $(pwd)/ldb --db=$db_dir scan    
+    $(kafka_streams_home_directory)/ldb --db=$db_dir scan    
 }
 
 

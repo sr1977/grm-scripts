@@ -2,6 +2,30 @@
 
 source ${GRM_SCRIPTS:?}/kafka/environment.sh
 
+function kafka_cert_fetch_credentials() {
+    local usage="appname environment"
+    local app=${1:?$usage}
+    local environment=${2:?$usage}
+    
+    local path=$(kafka_cert_vault_path $app $environment)
+    local keystore=$(kafka_cert_keystore_path $app $environment)
+    local props_file=$(keystore_directory)/${app}-${environment}.properties
+
+    pscli vault -- read --field keystore $path | base64 -D > $keystore
+    local password=$(pscli vault -- read --field keystore_password $path)
+    
+    cat <<EOF > $props_file
+security.protocol=SSL
+ssl.truststore.location=$keystore
+ssl.truststore.password=$password
+ssl.keystore.location=$keystore
+ssl.keystore.password=$password
+ssl.key.password=$password
+ssl.endpoint.identification.algorithm=
+EOF
+    echo "Created props file at $props_file"
+}
+
 function kafka_cert_keystore_path() {
     local usage="appname environment"
     local app=${1:?$usage}
@@ -27,7 +51,6 @@ function kafka_cert_vault_path() {
     local environment=${2:?$usage}
     echo "secret/trading/gbm/${environment}/${app}/kafka"
 }
-
 
 function kafka_cert_publish_secret() {
     local usage="app_name environment keystore_password"
@@ -71,6 +94,7 @@ function kafka_cert_create_keystore() {
     local app=${1:?$usage}
     local environment=${2:?$usage}
     local keystore_password=${3:?$usage}
+    local cn=${4:-$app}
 
     local cluster=$(kafka_cert_cluster)
     local cluster_env=$(kafka_cert_broker_env $environment)
@@ -82,7 +106,8 @@ function kafka_cert_create_keystore() {
     local cert=$tmp_dir/output.json
     mkdir $tmp_dir &> /dev/null
 
-    pscli vault -- write -format=json "$vault_path" common_name="$app" ttl=131490h > $cert
+    echo "Using CN $cn"
+    pscli vault -- write -format=json "$vault_path" common_name="$cn" ttl=131490h > $cert
 
     jq -r '.data .ca_chain[0]' $cert > $tmp_dir/ca-chain0.crt
     jq -r '.data .ca_chain[1]' $cert > $tmp_dir/ca-chain1.crt
@@ -110,10 +135,11 @@ function kafka_cert_generate() {
     local usage="app environment"
     local app=${1:?$usage}
     local environment=${2:?$usage}
+    local cn=${3:-$app}
     local password=$(kafka_cert_create_password)
 
     kafka_cert_archive_keystore $app $environment
-    kafka_cert_create_keystore $app $environment $password
+    kafka_cert_create_keystore $app $environment $password $cn
     kafka_cert_publish_secret $app $environment $password
 }
 

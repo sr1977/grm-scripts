@@ -21,6 +21,10 @@ function kafka_utils_list_topics() {
     kafka_utils_topics --list
 }
 
+function kafka_utils_describe_topic() {
+    kafka_utils_topics --describe --topic ${1:?No topic name supplied} $@
+}
+
 function kafka_utils_create_topic() {
     local name=${1:?Usage: create_topic name [partitions (default: 1)] [replication (default: 1)]}
     local partitions=${2:-1}
