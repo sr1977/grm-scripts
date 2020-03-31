@@ -132,7 +132,7 @@ function kafka_cert_create_password() {
 }
 
 function kafka_cert_generate() {
-    local usage="app environment"
+    local usage="app environment [CN (if different from app name)]"
     local app=${1:?$usage}
     local environment=${2:?$usage}
     local cn=${3:-$app}
