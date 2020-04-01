@@ -12,6 +12,14 @@ function kafka_streams_reset_query_service() {
         --to-latest 
 }
 
+function kafka_streams_reset_resulting_service() {
+    kafka-streams-application-reset \
+        --bootstrap-servers=localhost:9092 \
+        --application-id=liabilities-resulting \
+        --input-topics=liabilities-bet-individual \
+        --to-earliest 
+}
+
 function kafka_streams_reset_aggregate_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
@@ -38,7 +46,11 @@ function kafka_streams_rocksdb_scan() {
 
 
 function kafka_streams_purge() {
+    echo "Resetting aggregate service"
     kafka_streams_reset_aggregate_service
+    echo "Resetting query service"
     kafka_streams_reset_query_service
+    echo "Resetting resulting service"
+    kafka_streams_reset_resulting_service
     kafka_streams_clear_state_stores
 }
