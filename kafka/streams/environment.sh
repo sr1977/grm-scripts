@@ -8,24 +8,66 @@ function kafka_streams_reset_query_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
         --application-id=liabilityqueryservice-local \
-        --input-topics=liabilities-generic-aggregates \
+        --input-topics=liabilities-generic-aggregates,liabilities-windowed-aggregates \
         --to-latest 
 }
 
 function kafka_streams_reset_resulting_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
-        --application-id=liabilities-resulting \
+        --application-id=liabilitiesresulting \
         --input-topics=liabilities-bet-individual \
-        --to-earliest 
+        --to-latest
 }
 
 function kafka_streams_reset_aggregate_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
         --application-id=liabilities-local \
-        --input-topics=orwell-bet-in \
+        --input-topics=orwell-bet-in,liabilities-generic-aggregates,liabilities-bet-individual \
         --to-latest 
+}
+
+function kafka_streams_reset_stream() {
+    local env=local
+    local bootstrap_server=$(bootstrap_server -l)
+
+    OPTIND=1
+
+    local options=":st"
+
+    while getopts $options opt; do
+        case $opt in
+            s)
+                local env=stage
+                local bootstrap_server=$(bootstrap_server -s)
+                ;;
+            t)
+                local env=test
+                local bootstrap_server=$(bootstrap_server -t)
+                ;;
+            \?)
+                echo "Unknown environment, defaulting to local"
+                ;;
+        esac
+    done
+
+    shift $((OPTIND - 1))
+
+    local application=${1:?Please specify app to reset}
+    # TODO Have some kind of app -> topic config
+    local input_topics=${2:?List of topics (comma separated) to reset}
+    # TODO - check if the file exists, and if not drag it in from vault
+    local command_config="$(keystore_directory)/${application}-${env}.properties"
+
+    echo "Resetting $application in ${env:?No env specified}"
+    kafka-streams-application-reset \
+        --bootstrap-servers=$bootstrap_server \
+        --application-id=${application}-$env \
+        --config-file="$command_config" \
+        --input-topics="$input_topics" \
+        --to-latest 
+
 }
 
 function kafka_streams_clear_state_stores() {
