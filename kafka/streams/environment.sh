@@ -4,28 +4,45 @@ function kafka_streams_home_directory() {
     echo ${GRM_SCRIPTS}/kafka/streams
 }
 
+function kafka_streams_reset_event_catalogue() {
+    kafka-streams-application-reset \
+        --bootstrap-servers=localhost:9092 \
+        --application-id=eventcatalogue-local \
+        --input-topics=orwell-bet-in \
+        --to-latest
+    kafka-streams-application-reset \
+        --bootstrap-servers=localhost:9092 \
+        --application-id=eventcatalogue-local \
+        --input-topics=gstp.risk.liabilities.selections.outcomes.local \
+        --to-latest
+}
 function kafka_streams_reset_query_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
-        --application-id=liabilityqueryservice-local \
-        --input-topics=liabilities-generic-aggregates,liabilities-windowed-aggregates \
+        --application-id=gstp.risk.liabilities.queryservice.local \
+        --input-topics=gstp.risk.liabilities.global.top.liablities.local,gstp.risk.liabilities.bets.total.liabilities.local,gstp.risk.liabilities.bets.total.liabilities.windowed.local \
         --to-latest 
 }
 
 function kafka_streams_reset_resulting_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
-        --application-id=liabilitiesresulting \
-        --input-topics=liabilities-bet-individual \
+        --application-id=gstp.risk.liabilities.resulting.local \
+        --input-topics=gstp.risk.liabilities.bets.individual.local,gstp.risk.liabilities.selections.outcomes.local,gstp.risk.liabilities.global.top.liablities.local \
         --to-latest
 }
 
 function kafka_streams_reset_aggregate_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
-        --application-id=liabilities-local \
-        --input-topics=orwell-bet-in,liabilities-generic-aggregates,liabilities-bet-individual \
-        --to-latest 
+        --application-id=gstp.risk.liabilities.aggregator.local \
+        --input-topics=orwell-bet-in \
+        --to-latest
+    kafka-streams-application-reset \
+        --bootstrap-servers=localhost:9092 \
+        --application-id=gstp.risk.liabilities.aggregator.local \
+        --input-topics=gstp.risk.liabilities.bets.individual.local \
+        --to-latest
 }
 
 function kafka_streams_reset_stream() {
@@ -94,5 +111,7 @@ function kafka_streams_purge() {
     kafka_streams_reset_query_service
     echo "Resetting resulting service"
     kafka_streams_reset_resulting_service
+    echo "Resetting event catalogue"
+    kafka_streams_reset_event_catalogue
     kafka_streams_clear_state_stores
 }

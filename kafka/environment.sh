@@ -6,7 +6,7 @@ function kafka_scripts_home() {
 
 function keystore_directory() {
     local keystore_dir=$(kafka_scripts_home)/keystores
-    mkdir -p $keystore_dir 2&> /dev/null
+    mkdir -p $keystore_dir &> /dev/null
     echo $keystore_dir
 }
 

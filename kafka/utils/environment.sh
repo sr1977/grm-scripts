@@ -18,6 +18,29 @@ function kafka_utils_produce() {
 }
 
 function kafka_utils_list_topics() {
+    OPTIND=1
+
+    local options=":sta:"
+
+    while getopts $options opt; do
+        case $opt in
+            a)
+                local app=$OPTARG
+                ;;
+            s)
+                local use_stage=1
+                ;;
+            t)
+                local use_test=1
+                ;;
+            \?)
+                local use_local=1
+                ;;
+        esac
+    done
+
+    shift $((OPTIND - 1))
+
     kafka_utils_topics --list
 }
 

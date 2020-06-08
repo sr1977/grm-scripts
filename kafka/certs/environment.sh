@@ -120,7 +120,7 @@ function kafka_cert_create_keystore() {
     docker run -v $(keystore_directory):/root -w /root -it openjdk:11 keytool -import -alias "$(kafka_cert_cluster)-kafka_ca_1" -file tmp/ca-chain1.crt -keystore "$keystore_name" -storepass "$keystore_password" -noprompt
     docker run -v $(keystore_directory):/root -w /root -it openjdk:11 keytool -import -alias "$(kafka_cert_cluster)-kafka_ca_2" -file tmp/ca-chain0.crt -keystore "$keystore_name" -storepass "$keystore_password" -noprompt
 
-   rm -r $tmp_dir
+  # rm -r $tmp_dir
 }
 
 function kafka_cert_create_password() {
