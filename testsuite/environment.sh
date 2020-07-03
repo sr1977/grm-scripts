@@ -51,6 +51,31 @@ function stream_orwell() {
     start_stream orwell ${env:-local} $@
 }
 
+function stream_gsa() {
+     OPTIND=1
+
+    local options=":st"
+
+    while getopts $options opt; do
+        case $opt in
+            s)
+                local env=stage
+                ;;
+            t)
+                local env=test
+                ;;
+            \?)
+                echo "Unknown param - $options"
+                return 2
+                ;;
+        esac
+    done
+
+    shift $((OPTIND - 1))
+
+    start_stream gstpEventsRaw ${env:-local} $@
+}
+
 function stream_openbet() {
      OPTIND=1
 

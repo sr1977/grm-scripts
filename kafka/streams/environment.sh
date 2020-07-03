@@ -20,7 +20,7 @@ function kafka_streams_reset_query_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
         --application-id=gstp.risk.liabilities.queryservice.local \
-        --input-topics=gstp.risk.liabilities.global.top.liablities.local,gstp.risk.liabilities.bets.total.liabilities.local,gstp.risk.liabilities.bets.total.liabilities.windowed.local,gstp.risk.liabilities.queryservice.bysportsbook.local,gstp.risk.liabilities.queryservice.bysportsbook.windowed.local \
+        --input-topics=gstp.risk.liabilities.global.top.liablities.local,gstp.risk.liabilities.global.windowed.liabilities.local,gstp.risk.liabilities.bets.total.liabilities.local,gstp.risk.liabilities.bets.total.liabilities.windowed.local,gstp.risk.liabilities.queryservice.bysportsbook.local,gstp.risk.liabilities.queryservice.bysportsbook.windowed.local \
         --to-latest 
 }
 
