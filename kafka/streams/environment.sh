@@ -16,6 +16,15 @@ function kafka_streams_reset_event_catalogue() {
         --input-topics=gstp.risk.liabilities.selections.outcomes.local \
         --to-latest
 }
+
+function kafka_streams_reset_alert_service() {
+    kafka-streams-application-reset \
+        --bootstrap-servers=localhost:9092 \
+        --application-id=simplealerts-local \
+        --input-topics=orwell-bet-in,gstp.risk.alerting.config.local \
+        --to-latest 
+}
+
 function kafka_streams_reset_query_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
@@ -105,6 +114,8 @@ function kafka_streams_rocksdb_scan() {
 
 
 function kafka_streams_purge() {
+    echo "Resetting alert service"
+    kafka_streams_reset_alert_service
     echo "Resetting aggregate service"
     kafka_streams_reset_aggregate_service
     echo "Resetting query service"
