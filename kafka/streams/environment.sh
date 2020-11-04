@@ -1,3 +1,10 @@
+function kafka_streams_reset_alert_service() {
+    kafka-streams-application-reset \
+        --bootstrap-servers=localhost:9092 \
+        --application-id=simplealerts-local \
+        --input-topics=orwell-bet-in,gstp.risk.alerting.config.local \
+        --to-latest
+}
 source ${GRM_SCRIPTS:?}/kafka/environment.sh
 
 function kafka_streams_home_directory() {
@@ -25,6 +32,14 @@ function kafka_streams_reset_alert_service() {
         --to-latest 
 }
 
+function kafka_streams_reset_event_libs() {
+    kafka-streams-application-reset \
+        --bootstrap-servers=localhost:9092 \
+        --application-id=gstp.risk.liabilities.selectionaggregator.local \
+        --input-topics=orwell-bet-in,gstp.risk.liabilities.selection.position.local,gstp.risk.liabilities.selection.multiplecount.local,gstp.risk.liabilities.selection.limits.local,gstp.risk.liabilities.selection.resultalert. \
+        --to-latest 
+}
+
 function kafka_streams_reset_query_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
@@ -37,7 +52,7 @@ function kafka_streams_reset_resulting_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
         --application-id=gstp.risk.liabilities.resulting.local \
-        --input-topics=gstp.risk.liabilities.bets.individual.local,gstp.risk.liabilities.selections.outcomes.local,gstp.risk.liabilities.global.top.liablities.local \
+        --input-topics=gstp.risk.liabilities.bets.individual.local,gstp.risk.liabilities.selections.outcomes.local,gstp.risk.liabilities.global.top.liablities.local,gstp.risk.liabilities.resulting.compositeidlookup.local,test \
         --to-latest
 }
 
@@ -114,6 +129,8 @@ function kafka_streams_rocksdb_scan() {
 
 
 function kafka_streams_purge() {
+    echo "Resetting selection aggregator"
+    kafka_streams_reset_event_libs
     echo "Resetting alert service"
     kafka_streams_reset_alert_service
     echo "Resetting aggregate service"
