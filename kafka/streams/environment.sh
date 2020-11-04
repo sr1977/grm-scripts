@@ -37,7 +37,7 @@ function kafka_streams_reset_resulting_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
         --application-id=gstp.risk.liabilities.resulting.local \
-        --input-topics=gstp.risk.liabilities.bets.individual.local,gstp.risk.liabilities.selections.outcomes.local,gstp.risk.liabilities.global.top.liablities.local \
+        --input-topics=gstp.risk.liabilities.bets.individual.local,gstp.risk.liabilities.selections.outcomes.local,gstp.risk.liabilities.global.top.liablities.local,gstp.risk.liabilities.resulting.compositeidlookup.local,test \
         --to-latest
 }
 

@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-declare -a topics=("orwell-bet-in" "gstp.risk.liabilities.bets.individual.local" "gstp.risk.liabilities.selections.outcomes.local" "gstp.risk.liabilities.queryservice.bysportsbook.local" "gstp.risk.liabilities.queryservice.bysportsbook.windowed.local" "gstp.risk.liabilities.resulting.compositeidlookup.local")
+declare -a topics=("orwell-bet-in" "gstp.risk.liabilities.bets.individual.local" "gstp.risk.liabilities.selections.outcomes.local" "gstp.risk.liabilities.queryservice.bysportsbook.local" "gstp.risk.liabilities.queryservice.bysportsbook.windowed.local" "gstp.risk.liabilities.resulting.compositeidlookup.local" "gstp.risk.liabilities.bets.total.liabilities.local" "gstp.risk.liabilities.bets.total.liabilities.windowed.local" "gstp.risk.liabilities.resulting.resultedids.local")
 
 options=":d"
 
