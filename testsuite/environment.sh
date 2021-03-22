@@ -51,6 +51,31 @@ function stream_orwell() {
     start_stream orwell ${env:-local} $@
 }
 
+function stream_alerts() {
+     OPTIND=1
+
+    local options=":st"
+
+    while getopts $options opt; do
+        case $opt in
+            s)
+                local env=stage
+                ;;
+            t)
+                local env=test
+                ;;
+            \?)
+                echo "Unknown param - $options"
+                return 2
+                ;;
+        esac
+    done
+
+    shift $((OPTIND - 1))
+
+    start_stream simpleAlertsRaw ${env:-local} $@
+}
+
 function stream_gsa() {
      OPTIND=1
 
@@ -99,6 +124,31 @@ function stream_openbet() {
     shift $((OPTIND - 1))
 
     start_stream openbetEventsRaw ${env:-local} $@
+}
+
+function stream_orwell_alerts() {
+     OPTIND=1
+
+    local options=":st"
+
+    while getopts $options opt; do
+        case $opt in
+            s)
+                local env=stage
+                ;;
+            t)
+                local env=test
+                ;;
+            \?)
+                echo "Unknown param - $options"
+                return 2
+                ;;
+        esac
+    done
+
+    shift $((OPTIND - 1))
+
+    start_stream orwellAlertsRaw ${env:-local} $@
 }
 
 function stream_amelco() {
