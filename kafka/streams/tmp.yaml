@@ -1,0 +1,17 @@
+apiVersion: mysql.skybet.io/v1alpha1
+kind: MySQL
+metadata:
+  name: liabilities-db
+spec:
+  replicas: 3
+  resources:
+    cpu: "1000m"
+    memory: "1.5Gi"
+    storage: "10Gi"
+  backup:
+    resources:
+      storage: "50Gi"           # The size of the disk to make that will hold backup files
+    schedules:
+      - name: "liablities-daily"          # The name of this backup schedule
+        schedule: "0 6 * * *"
+        keep: 1                # Number of backups for this schedule to keep before the oldest is deleted

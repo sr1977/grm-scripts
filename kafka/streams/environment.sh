@@ -1,3 +1,10 @@
+function kafka_streams_reset_new_metadata() {
+    kafka-streams-application-reset \
+        --bootstrap-servers=localhost:9092 \
+        --application-id=glm-metadata-local \
+        --input-topics=orwell-bet-in,gstp.risk.liabilities.bets.individual.local,resulted-composites \
+        --to-latest
+}
 function kafka_streams_reset_alert_service() {
     kafka-streams-application-reset \
         --bootstrap-servers=localhost:9092 \
@@ -129,6 +136,8 @@ function kafka_streams_rocksdb_scan() {
 
 
 function kafka_streams_purge() {
+    echo "Resetting new metadata"
+    kafka_streams_reset_new_metadata
     echo "Resetting selection aggregator"
     kafka_streams_reset_event_libs
     echo "Resetting alert service"

@@ -18,6 +18,7 @@ function start_stream() {
    esac
 
    echo "Posting to env: $env"
+   echo curl -X POST "${testsuite_endpoint}?duration=${duration}&betSchema=${type}&betsPerSecond=${bps}"
    curl -X POST "${testsuite_endpoint}?duration=${duration}&betSchema=${type}&betsPerSecond=${bps}"
    echo "" # Adds missing newline from above
 }
@@ -49,6 +50,31 @@ function stream_orwell() {
     shift $((OPTIND - 1))
 
     start_stream orwell ${env:-local} $@
+}
+
+function stream_gbs() {
+     OPTIND=1
+
+    local options=":st"
+
+    while getopts $options opt; do
+        case $opt in
+            s)
+                local env=stage
+                ;;
+            t)
+                local env=test
+                ;;
+            \?)
+                echo "Unknown param - $options"
+                return 2
+                ;;
+        esac
+    done
+
+    shift $((OPTIND - 1))
+
+    start_stream gbsEvents ${env:-local} $@
 }
 
 function stream_alerts() {

@@ -1,0 +1,1 @@
+kafka-consumer-groups --command-config /Users/sri01/workspace/grm-scripts/kafka/keystores/glm-kafkaconnect-test.properties --bootstrap-server gueaplatkafkatradingtst01:9093  --describe --group glm-kafkaconnect-test

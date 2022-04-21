@@ -128,9 +128,9 @@ function kafka_cert_create_keystore() {
     
     openssl pkcs12 -export -in $certificate -inkey $key -name "${cluster}-client" -out "$bundle" -password "pass:${keystore_password}"
 
-    docker run -v $(keystore_directory):/root -v $tmp_dir:/scratch -w /root -it openjdk:11 keytool -importkeystore -deststorepass "$keystore_password" -destkeystore "$keystore_name" -srckeystore "/scratch/$(basename $bundle)" -srcstoretype PKCS12 -srcstorepass "$keystore_password"
-    docker run -v $(keystore_directory):/root -v $tmp_dir:/scratch -w /root -it openjdk:11 keytool -import -alias "${cluster}-kafka_ca_1" -file "/scratch/$(basename $ca_chain_1)" -keystore "$keystore_name" -storepass "$keystore_password" -noprompt
-    docker run -v $(keystore_directory):/root -v $tmp_dir:/scratch -w /root -it openjdk:11 keytool -import -alias "${cluster}-kafka_ca_2" -file "/scratch/$(basename $ca_chain_0)" -keystore "$keystore_name" -storepass "$keystore_password" -noprompt
+    docker run -v $(keystore_directory):/root -v $tmp_dir:/scratch -w /root -it adoptopenjdk/openjdk11:jre-11.0.8_10 keytool -importkeystore -deststorepass "$keystore_password" -destkeystore "$keystore_name" -srckeystore "/scratch/$(basename $bundle)" -srcstoretype PKCS12 -srcstorepass "$keystore_password"
+    docker run -v $(keystore_directory):/root -v $tmp_dir:/scratch -w /root -it adoptopenjdk/openjdk11:jre-11.0.8_10 keytool -import -alias "${cluster}-kafka_ca_1" -file "/scratch/$(basename $ca_chain_1)" -keystore "$keystore_name" -storepass "$keystore_password" -noprompt
+    docker run -v $(keystore_directory):/root -v $tmp_dir:/scratch -w /root -it adoptopenjdk/openjdk11:jre-11.0.8_10 keytool -import -alias "${cluster}-kafka_ca_2" -file "/scratch/$(basename $ca_chain_0)" -keystore "$keystore_name" -storepass "$keystore_password" -noprompt
 
 }
 
@@ -188,7 +188,7 @@ function kafka_cert_generate_multi_cluster() {
     done
 
     kafka_cert_publish_secret ${app_name:?$usage} ${environment:?$usage} $password
-    kafka_cert_delete_scratch_directory
+   # kafka_cert_delete_scratch_directory
 }
 
 

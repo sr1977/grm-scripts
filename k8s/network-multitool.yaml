@@ -30,7 +30,6 @@ spec:
     terminationMessagePolicy: File
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
-  priority: 0
   restartPolicy: Always
   terminationGracePeriodSeconds: 30
   tolerations:

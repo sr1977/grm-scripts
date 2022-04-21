@@ -1,0 +1,3 @@
+date=${1:?No date given, should be in form 'YYYY-MM-DDTHH:mm'}
+kafka-consumer-groups --command-config /Users/sri01/workspace/grm-scripts/kafka/keystores/glm-metadata-test.properties --bootstrap-server gueaplatkafkatradingtst01:9093  --reset-offsets --to-datetime "${date}:00.000" --group glm-metadata-test  --topic gstp.risk.liabilities.bets.total.liabilities.test --execute
+kafka-consumer-groups --command-config /Users/sri01/workspace/grm-scripts/kafka/keystores/glm-metadata-test.properties --bootstrap-server gueaplatkafkatradingtst01:9093  --reset-offsets --to-datetime "${date}:00.000" --group glm-metadata-test  --topic bet.trading.orwell.bets --execute
